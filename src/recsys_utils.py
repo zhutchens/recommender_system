@@ -22,6 +22,17 @@ def build_profile(items: list) -> np.array:
     
     return np.divide(user_vector, len(items)) # compute average of all items user interacted with 
 
+def preprocess_items(item_description):
+    stop_words = stopwords.words('english')
+
+    item_description = ''.join([char for char in item_description if char not in punctuation])
+
+    item_description = word_tokenize(item_description)
+    item_description = [word.lower() for word in item_description if word.lower() not in stop_words]
+    item_description = ' '.join([word for word in item_description])
+    
+    return item_description
+
         
 def anaylze_item(item_description: str, num_keywords: int, bs: int) -> np.ndarray:
     '''
@@ -36,25 +47,18 @@ def anaylze_item(item_description: str, num_keywords: int, bs: int) -> np.ndarra
     rake = Rake()
     model = SentenceTransformer("all-MiniLM-L6-v2")
 
-    stop_words = stopwords.words('english')
-
-    item_description = ''.join([char for char in item_description if char not in punctuation])
-
-    item_description = word_tokenize(item_description)
-    item_description = [word.lower() for word in item_description if word.lower() not in stop_words]
-    item_description = ' '.join([word for word in item_description])
-
     rake.extract_keywords_from_text(item_description)
     sentences = rake.get_ranked_phrases()
     
+    sentences = ''.join(sentences)
+    
     keywords = []
-    for sentence in sentences: # may be more than one sentence, so loop just in case 
-        for word in sentence.split():
-            keywords.append(word)
+    for word in sentences.split():
+        keywords.append(word)
+    
+    print(keywords)
 
-    keywords = ' '.join([word for word in keywords][:num_keywords])
-
-    return model.encode(keywords, batch_size = bs)
+    return model.encode(keywords[:num_keywords], batch_size = bs)
 
 
 def train_user_model(user_features, review_scores, learning_task, verbose = False):
